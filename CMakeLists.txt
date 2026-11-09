@@ -47,6 +47,8 @@ include(BuildInfo)      # generated/build_config.hpp + build-time generated/git_
 # -----------------------------------------------------------------------------
 add_library(bench_core STATIC
   src/build_info.cpp
+  src/cli.cpp
+  src/config.cpp
 )
 target_include_directories(bench_core
   PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
