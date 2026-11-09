@@ -49,6 +49,8 @@ add_library(bench_core STATIC
   src/build_info.cpp
   src/cli.cpp
   src/config.cpp
+  src/init_check.cpp
+  src/layout.cpp
 )
 target_include_directories(bench_core
   PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -62,9 +64,15 @@ add_dependencies(bench_core bench_git_info)
 # Driver: one executable name for every flow, the source depends on SYCL_IMPL
 # -----------------------------------------------------------------------------
 if(SYCL_IMPL STREQUAL "none")
-  add_executable(gemm_bench src/main_omp.cpp)
+  add_executable(gemm_bench
+    src/main_omp.cpp
+    src/backend_omp/arena.cpp
+  )
 else()
-  add_executable(gemm_bench src/main_sycl.cpp)
+  add_executable(gemm_bench
+    src/main_sycl.cpp
+    src/backend_sycl/arena.cpp
+  )
 endif()
 target_link_libraries(gemm_bench PRIVATE bench_core)
 

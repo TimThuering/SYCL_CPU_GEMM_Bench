@@ -8,6 +8,8 @@
 #include "bench/build_info.hpp"
 #include "bench/cli.hpp"
 #include "bench/config.hpp"
+#include "bench/layout.hpp"
+#include "backend_sycl/arena.hpp"
 
 namespace {
 
@@ -44,6 +46,14 @@ int main(int argc, char** argv) {
     if (!cfg.quiet) {
       bench::print_build_info(std::cerr);
       bench::print_config(std::cerr, cfg);
+    }
+
+    sycl::queue q{sycl::default_selector_v};
+    bench::Arena arena(q, cfg.problem, 0);
+    arena.initialize(cfg.seed);
+    if (!cfg.quiet) {
+      std::cerr << "device:        " << q.get_device().get_info<sycl::info::device::name>() << "\n";
+      bench::print_arena_info(std::cerr, arena.info());
     }
     return bench::exit_ok;
   } catch (const sycl::exception& e) {

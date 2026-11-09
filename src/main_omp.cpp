@@ -8,6 +8,8 @@
 #include "bench/build_info.hpp"
 #include "bench/cli.hpp"
 #include "bench/config.hpp"
+#include "bench/layout.hpp"
+#include "backend_omp/arena.hpp"
 
 namespace {
 
@@ -39,6 +41,10 @@ int main(int argc, char** argv) {
       bench::print_build_info(std::cerr);
       bench::print_config(std::cerr, cfg);
     }
+
+    bench::Arena arena(cfg.problem, 0);
+    arena.initialize(cfg.seed);
+    if (!cfg.quiet) bench::print_arena_info(std::cerr, arena.info());
     return bench::exit_ok;
   } catch (const std::exception& e) {
     std::cerr << "error: " << e.what() << "\n";

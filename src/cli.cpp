@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 #include <string>
 
 #include "bench/build_info.hpp"
@@ -47,18 +46,8 @@ std::string join_argv(int argc, char** argv) {
   return out;
 }
 
-// a * b, throws UsageError on size_t overflow
-std::size_t mul_checked(std::size_t a, std::size_t b, const char* what) {
-  if (a != 0 && b > std::numeric_limits<std::size_t>::max() / a)
-    throw UsageError(std::string("problem too large (overflow in ") + what + ")");
-  return a * b;
-}
-
-std::size_t add_checked(std::size_t a, std::size_t b, const char* what) {
-  if (b > std::numeric_limits<std::size_t>::max() - a)
-    throw UsageError(std::string("problem too large (overflow in ") + what + ")");
-  return a + b;
-}
+// Upper bound for every dimension incl. padding.
+constexpr std::size_t max_dim = 1'000'000;
 
 void validate(Config& cfg) {
   if (cfg.stage.empty())
@@ -70,15 +59,12 @@ void validate(Config& cfg) {
   if (p.m == 0 || p.n == 0 || p.k == 0)
     throw UsageError("matrix dimensions must be >= 1");
 
-  p.lda = add_checked(p.k, cfg.ld_pad, "lda");
-  p.ldb = add_checked(p.n, cfg.ld_pad, "ldb");
-  p.ldc = add_checked(p.n, cfg.ld_pad, "ldc");
+  if (p.m > max_dim || p.n > max_dim || p.k > max_dim || cfg.ld_pad > max_dim)
+    throw UsageError("matrix dimensions and --ld-pad must be <= " + std::to_string(max_dim));
 
-  // Total element count of A, B, C must fit into size_t bytes
-  std::size_t elems = mul_checked(p.m, p.lda, "A");
-  elems = add_checked(elems, mul_checked(p.k, p.ldb, "B"), "A+B");
-  elems = add_checked(elems, mul_checked(p.m, p.ldc, "C"), "A+B+C");
-  mul_checked(elems, sizeof(double), "bytes");
+  p.lda = p.k + cfg.ld_pad;
+  p.ldb = p.n + cfg.ld_pad;
+  p.ldc = p.n + cfg.ld_pad;
 
   if (cfg.reps == 0)
     throw UsageError("--reps must be >= 1");
