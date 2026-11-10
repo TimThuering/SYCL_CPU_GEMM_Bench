@@ -16,6 +16,7 @@ Requirements: CMake >= 3.20, a C++17 compiler, internet access at configure time
 | `SYCL_EXTRA_FLAGS` | string | extra SYCL flags (compile + link), e.g. Native CPU device flags |
 | `ARCH_FLAGS` | string | host ISA flags (compile + link) |
 | `GEMM_MR/NR/KC/MC` | integers | kernel parameters (`kernels/params.hpp`) |
+| `BENCH_BUILD_TESTS` | `OFF` (default) \| `ON` | build the GoogleTest tests (googletest v1.17.0 fetched) |
 | `CMAKE_BUILD_TYPE` | default `Release` | |
 
 ## Flows (templates)
@@ -51,6 +52,20 @@ $B/<flow>/gemm_bench
 
 Backend selection at run time (environment, as before): `ACPP_VISIBILITY_MASK`, `ONEAPI_DEVICE_SELECTOR`,
 `OCL_ICD_VENDORS`/`OCL_ICD_FILENAMES`, `POCL_DEVICES`, ...
+
+## Tests
+
+Configure a flow with `-DBENCH_BUILD_TESTS=ON`, build, then run `ctest` in the build directory
+(with the same run-time environment as the benchmark, e.g. `ACPP_VISIBILITY_MASK`, `ONEAPI_DEVICE_SELECTOR`).
+
+| Test | Content |
+|---|---|
+| `bench_unit_tests` | harness core: CLI, value function, layout, init check, verification, timing, JSON |
+| `bench_stage_tests` | every stage of this flow × 16 problem shapes (odd, rectangular, 1×1×1, with/without row padding), each run twice (catches accumulating onto C), verified; stages that are not implemented are reported as *skipped* |
+| `cli_ref`, `cli_usage_exit_code` | end-to-end runs of `gemm_bench` (exit codes 0 and 2) |
+
+Single tests: `ctest -R regblock`, or `./tests/bench_stage_tests --gtest_filter='*regblock*'` for the
+GoogleTest output with the failure message.
 
 ## Build info
 
