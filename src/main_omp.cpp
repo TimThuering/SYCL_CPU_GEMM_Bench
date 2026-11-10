@@ -9,7 +9,9 @@
 #include "bench/cli.hpp"
 #include "bench/config.hpp"
 #include "bench/layout.hpp"
+#include "bench/metadata.hpp"
 #include "backend_omp/arena.hpp"
+#include "backend_omp/device.hpp"
 
 namespace {
 
@@ -42,9 +44,20 @@ int main(int argc, char** argv) {
       bench::print_config(std::cerr, cfg);
     }
 
+    const bench::HostInfo host = bench::query_host();
+    const auto env = bench::relevant_env();
+    const bench::DeviceInfo device = bench::query_device();
+
     bench::Arena arena(cfg.problem, 0);
     arena.initialize(cfg.seed);
-    if (!cfg.quiet) bench::print_arena_info(std::cerr, arena.info());
+
+    if (!cfg.quiet) {
+      bench::print_host_info(std::cerr, host);
+      bench::print_env(std::cerr, env);
+      bench::print_device_info(std::cerr, device);
+      bench::print_arena_info(std::cerr, arena.info());
+      std::cerr << "OS threads:    " << bench::os_thread_count() << "\n";
+    }
     return bench::exit_ok;
   } catch (const std::exception& e) {
     std::cerr << "error: " << e.what() << "\n";

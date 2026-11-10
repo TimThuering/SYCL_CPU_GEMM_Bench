@@ -51,6 +51,7 @@ add_library(bench_core STATIC
   src/config.cpp
   src/init_check.cpp
   src/layout.cpp
+  src/metadata.cpp
   src/timing.cpp
   src/verify.cpp
 )
@@ -69,11 +70,13 @@ if(SYCL_IMPL STREQUAL "none")
   add_executable(gemm_bench
     src/main_omp.cpp
     src/backend_omp/arena.cpp
+    src/backend_omp/device.cpp
   )
 else()
   add_executable(gemm_bench
     src/main_sycl.cpp
     src/backend_sycl/arena.cpp
+    src/backend_sycl/device.cpp
   )
 endif()
 target_link_libraries(gemm_bench PRIVATE bench_core)
