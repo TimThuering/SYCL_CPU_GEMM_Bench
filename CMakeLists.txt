@@ -72,12 +72,14 @@ if(SYCL_IMPL STREQUAL "none")
     src/main_omp.cpp
     src/backend_omp/arena.cpp
     src/backend_omp/device.cpp
+    src/backend_omp/stages.cpp
   )
 else()
   add_executable(gemm_bench
     src/main_sycl.cpp
     src/backend_sycl/arena.cpp
     src/backend_sycl/device.cpp
+    src/backend_sycl/stages.cpp
   )
 endif()
 target_link_libraries(gemm_bench PRIVATE bench_core)

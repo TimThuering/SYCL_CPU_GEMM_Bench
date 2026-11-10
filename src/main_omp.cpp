@@ -4,14 +4,19 @@
 
 #include <exception>
 #include <iostream>
+#include <vector>
 
 #include "bench/build_info.hpp"
 #include "bench/cli.hpp"
 #include "bench/config.hpp"
+#include "bench/make_args.hpp"
 #include "bench/metadata.hpp"
 #include "bench/result.hpp"
+#include "bench/timing.hpp"
+#include "bench/verify.hpp"
 #include "backend_omp/arena.hpp"
 #include "backend_omp/device.hpp"
+#include "backend_omp/stages.hpp"
 
 namespace {
 
@@ -24,13 +29,28 @@ void list_devices() {
 void run(bench::ResultRecord& rec) {
   const bench::Config& cfg = rec.config;
 
+  const bench::OmpStage* stage = bench::find_stage(cfg.stage);
+  if (stage == nullptr)
+    throw bench::UnsupportedError("stage '" + cfg.stage + "' is not registered in this build");
+
   rec.device = bench::query_device();
 
-  bench::Arena arena(cfg.problem, 0);
+  bench::Arena arena(cfg.problem, stage->workspace_bytes(cfg.problem));
   rec.arena = arena.info();
   arena.initialize(cfg.seed);
+  const GemmArgs args = bench::make_gemm_args(arena.matrices(), cfg.problem);
 
-  throw bench::UnsupportedError("stage '" + cfg.stage + "' is not available in this build");
+  // One iteration: the stage returns when C is computed
+  rec.timing = bench::time_iterations([&] { stage->run(args); }, cfg.warmup, cfg.reps);
+  rec.os_threads = bench::os_thread_count();
+
+  if (cfg.verify) {
+    std::vector<double> c(cfg.problem.m * cfg.problem.ldc);
+    arena.copy_c_to_host(c.data());
+    rec.verify = bench::verify(cfg, c.data());
+  } else {
+    rec.verify = bench::VerifyResult{};  // performed = false
+  }
 }
 
 } // namespace

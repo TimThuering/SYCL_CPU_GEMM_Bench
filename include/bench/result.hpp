@@ -7,10 +7,10 @@
 #include <cstddef>
 #include <map>
 #include <optional>
-#include <stdexcept>
 #include <string>
 
 #include "bench/config.hpp"
+#include "bench/errors.hpp"
 #include "bench/layout.hpp"
 #include "bench/metadata.hpp"
 #include "bench/timing.hpp"
@@ -29,11 +29,6 @@ enum class Status {
 
 std::string to_string(Status s);
 int exit_code(Status s);
-
-// Thrown when the selected stage cannot run (status unsupported)
-struct UnsupportedError : std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
 
 struct ResultRecord {
   Status status = Status::error;
