@@ -28,6 +28,7 @@ struct BuildInfo {
   std::string git_commit;
   std::string git_describe;
   std::string git_dirty;        // "true" | "false" | "unknown"
+  std::string git_source;       // "git" | "SOURCE_VERSION" (synced copy) | "none"
   std::size_t mr, nr, kc, mc;   // kernel parameters (kernels/params.hpp)
 };
 

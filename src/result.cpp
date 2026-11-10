@@ -53,7 +53,10 @@ ordered_json build_json() {
                    {"version", b.compiler_version},
                    {"version_output", b.compiler_version_output}};
   j["cmake_version"] = b.cmake_version;
-  j["git"] = {{"commit", b.git_commit}, {"describe", b.git_describe}, {"dirty", tri_bool(b.git_dirty)}};
+  j["git"] = {{"commit", b.git_commit},
+              {"describe", b.git_describe},
+              {"dirty", tri_bool(b.git_dirty)},
+              {"source", b.git_source}};
   j["build_host"] = {{"hostname", b.build_host},
                      {"cpu", b.build_cpu},
                      {"logical_cores", number_or_null(b.build_cores)},

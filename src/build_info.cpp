@@ -30,6 +30,7 @@ const BuildInfo& build_info() {
       BENCH_GIT_COMMIT,
       BENCH_GIT_DESCRIBE,
       BENCH_GIT_DIRTY,
+      BENCH_GIT_SOURCE,
       gemm::MR,
       gemm::NR,
       gemm::KC,
@@ -47,7 +48,8 @@ void print_build_info(std::ostream& os) {
      << "compiler:      " << b.compiler_id << " " << b.compiler_version << " (" << b.compiler_path << ")\n"
      << "build host:    " << b.build_host << " (" << b.build_cpu << ", " << b.build_cores << " logical cores, "
      << b.build_arch << ", " << b.build_os << ")\n"
-     << "git:           " << b.git_describe << " commit=" << b.git_commit << " dirty=" << b.git_dirty << "\n"
+     << "git:           " << b.git_describe << " commit=" << b.git_commit << " dirty=" << b.git_dirty
+     << " (from " << b.git_source << ")\n"
      << "params:        MR=" << b.mr << " NR=" << b.nr << " KC=" << b.kc << " MC=" << b.mc << "\n";
 }
 

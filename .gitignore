@@ -1,1 +1,6 @@
 .idea/
+# Personal paths of the sync / pull scripts (copy of scripts/local/targets.example.sh)
+scripts/local/targets.local.sh
+# Written by the sync script into the server copy only
+SOURCE_VERSION
+SOURCE_PATCH
