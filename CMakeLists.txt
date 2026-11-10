@@ -51,6 +51,7 @@ add_library(bench_core STATIC
   src/config.cpp
   src/init_check.cpp
   src/layout.cpp
+  src/timing.cpp
   src/verify.cpp
 )
 target_include_directories(bench_core

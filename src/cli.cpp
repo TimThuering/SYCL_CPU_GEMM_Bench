@@ -88,8 +88,7 @@ CliResult parse_cli(int argc, char** argv) {
   options.add_options("Run")
     ("warmup", "Untimed iterations after the cold one",
         cxxopts::value<std::size_t>()->default_value(std::to_string(def.warmup)))
-    ("reps", "Timed iterations", cxxopts::value<std::size_t>()->default_value(std::to_string(def.reps)))
-    ("profiling", "Additionally record SYCL event profiling times");
+    ("reps", "Timed iterations", cxxopts::value<std::size_t>()->default_value(std::to_string(def.reps)));
 
   options.add_options("Verification")
     ("no-verify", "Skip the verification against the host reference");
@@ -140,7 +139,6 @@ CliResult parse_cli(int argc, char** argv) {
 
     cfg.warmup = r["warmup"].as<std::size_t>();
     cfg.reps = r["reps"].as<std::size_t>();
-    cfg.profiling = r.count("profiling") > 0;
 
     cfg.verify = r.count("no-verify") == 0;
 

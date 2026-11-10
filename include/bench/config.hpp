@@ -29,7 +29,6 @@ struct Config {
   // Run
   std::size_t warmup = 2;      // untimed iterations after the cold one
   std::size_t reps = 10;       // timed iterations
-  bool profiling = false;      // additionally record SYCL event times
 
   // Verification
   bool verify = true;          // compare C with a host reference after the timed iterations
