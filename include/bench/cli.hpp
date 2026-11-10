@@ -39,5 +39,6 @@ inline constexpr int exit_ok = 0;
 inline constexpr int exit_verify_failed = 1;
 inline constexpr int exit_usage = 2;
 inline constexpr int exit_error = 3;
+inline constexpr int exit_unsupported = 4;
 
 } // namespace bench

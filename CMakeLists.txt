@@ -52,6 +52,7 @@ add_library(bench_core STATIC
   src/init_check.cpp
   src/layout.cpp
   src/metadata.cpp
+  src/result.cpp
   src/timing.cpp
   src/verify.cpp
 )
