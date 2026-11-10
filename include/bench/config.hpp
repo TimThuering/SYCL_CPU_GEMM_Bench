@@ -8,14 +8,6 @@
 
 namespace bench {
 
-enum class VerifyMode {
-  fast,  // Freivalds check + sampled entries, O(N^2)
-  full,  // complete host reference, O(N^3), for tests / small sizes
-  none,  // no verification
-};
-
-std::string to_string(VerifyMode mode);
-
 // Problem: C (M x N) = A (M x K) * B (K x N), row-major, double.
 // Leading dimensions are in elements: lda >= K, ldb >= N, ldc >= N.
 struct Problem {
@@ -40,8 +32,7 @@ struct Config {
   bool profiling = false;      // additionally record SYCL event times
 
   // Verification
-  VerifyMode verify = VerifyMode::fast;
-  std::size_t verify_samples = 1024;  // sampled C entries in fast mode
+  bool verify = true;          // compare C with a host reference after the timed iterations
 
   // Output
   std::string output;          // JSON file path; empty = stdout

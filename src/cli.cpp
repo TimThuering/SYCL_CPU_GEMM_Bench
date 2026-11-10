@@ -23,13 +23,6 @@ std::string stage_list_text() {
   return s;
 }
 
-VerifyMode parse_verify_mode(const std::string& s) {
-  if (s == "fast") return VerifyMode::fast;
-  if (s == "full") return VerifyMode::full;
-  if (s == "none") return VerifyMode::none;
-  throw UsageError("invalid --verify '" + s + "' (expected fast | full | none)");
-}
-
 std::string join_argv(int argc, char** argv) {
   std::string out;
   for (int i = 0; i < argc; ++i) {
@@ -68,8 +61,6 @@ void validate(Config& cfg) {
 
   if (cfg.reps == 0)
     throw UsageError("--reps must be >= 1");
-  if (cfg.verify == VerifyMode::fast && cfg.verify_samples == 0)
-    throw UsageError("--verify-samples must be >= 1 for --verify fast");
 }
 
 } // namespace
@@ -101,10 +92,7 @@ CliResult parse_cli(int argc, char** argv) {
     ("profiling", "Additionally record SYCL event profiling times");
 
   options.add_options("Verification")
-    ("verify", "Verification mode: fast | full | none",
-        cxxopts::value<std::string>()->default_value(to_string(def.verify)))
-    ("verify-samples", "Sampled C entries for --verify fast",
-        cxxopts::value<std::size_t>()->default_value(std::to_string(def.verify_samples)));
+    ("no-verify", "Skip the verification against the host reference");
 
   options.add_options("Output")
     ("o,output", "JSON output file (default: stdout)", cxxopts::value<std::string>())
@@ -154,8 +142,7 @@ CliResult parse_cli(int argc, char** argv) {
     cfg.reps = r["reps"].as<std::size_t>();
     cfg.profiling = r.count("profiling") > 0;
 
-    cfg.verify = parse_verify_mode(r["verify"].as<std::string>());
-    cfg.verify_samples = r["verify-samples"].as<std::size_t>();
+    cfg.verify = r.count("no-verify") == 0;
 
     if (r.count("output")) cfg.output = r["output"].as<std::string>();
     if (r.count("label")) cfg.label = r["label"].as<std::string>();
