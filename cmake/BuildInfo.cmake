@@ -18,7 +18,9 @@ execute_process(
 )
 
 # Build host: hostname, CPU model, logical cores, OS, architecture.
-# CPU model fallbacks: CMake (x86 "model name") -> lscpu "Model name" (ARM) -> /proc/cpuinfo "uarch" (RISC-V)
+# CPU model fallbacks: CMake (x86 "model name") -> lscpu "Model name" (ARM) -> /proc/cpuinfo "uarch",
+# then mvendorid / marchid / mimpid (RISC-V). On RISC-V, CMake reports a placeholder such as
+# "1 core 0 MHz Unknown family", which is discarded.
 cmake_host_system_information(RESULT BENCH_BUILD_HOST  QUERY HOSTNAME)
 cmake_host_system_information(RESULT BENCH_BUILD_CORES QUERY NUMBER_OF_LOGICAL_CORES)
 cmake_host_system_information(RESULT BENCH_BUILD_CPU   QUERY PROCESSOR_DESCRIPTION)
@@ -28,6 +30,9 @@ set(BENCH_BUILD_OS   "${_os_name} ${_os_release}")
 set(BENCH_BUILD_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
 string(STRIP "${BENCH_BUILD_CPU}" BENCH_BUILD_CPU)
+if(BENCH_BUILD_CPU MATCHES "Unknown family")
+  set(BENCH_BUILD_CPU "")
+endif()
 if(BENCH_BUILD_CPU STREQUAL "")
   execute_process(COMMAND lscpu OUTPUT_VARIABLE _lscpu ERROR_QUIET RESULT_VARIABLE _rc)
   if(_rc EQUAL 0 AND _lscpu MATCHES "Model name:[ \t]*([^\n]*)")
@@ -39,6 +44,17 @@ if(BENCH_BUILD_CPU STREQUAL "" AND EXISTS "/proc/cpuinfo")
   if(_uarch MATCHES ":[ \t]*(.*)$")
     string(STRIP "${CMAKE_MATCH_1}" BENCH_BUILD_CPU)
   endif()
+endif()
+if(BENCH_BUILD_CPU STREQUAL "" AND EXISTS "/proc/cpuinfo")
+  set(_ids "")
+  foreach(_key mvendorid marchid mimpid)
+    file(STRINGS "/proc/cpuinfo" _line REGEX "^${_key}[ \t]*:" LIMIT_COUNT 1)
+    if(_line MATCHES ":[ \t]*(.*)$")
+      string(STRIP "${CMAKE_MATCH_1}" _val)
+      list(APPEND _ids "${_key} ${_val}")
+    endif()
+  endforeach()
+  list(JOIN _ids ", " BENCH_BUILD_CPU)
 endif()
 if(BENCH_BUILD_CPU STREQUAL "")
   set(BENCH_BUILD_CPU "unknown")

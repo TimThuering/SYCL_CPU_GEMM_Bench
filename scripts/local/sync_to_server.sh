@@ -8,7 +8,8 @@
 #   --final    refuse if the working tree has uncommitted changes (for final campaigns)
 #
 # What is transferred: only the whitelist below (no .git, no IDE / build directories, no dotfiles),
-# into <server dir>/src/ with --delete (the server copy mirrors the whitelist exactly).
+# into <server dir>/src/ with --delete (the server copy mirrors the whitelist exactly);
+# also creates <server dir>/logs and <server dir>/results.
 # Instead of .git, the version is written to src/SOURCE_VERSION (commit, describe, dirty), and for a
 # dirty tree the uncommitted changes to src/SOURCE_PATCH. cmake/GitInfo.cmake reads SOURCE_VERSION.
 # Before transferring, the whitelisted files are scanned for credential patterns (abort on a match).
@@ -23,7 +24,7 @@ for a in "$@"; do
   case $a in
     --apply) apply=1 ;;
     --final) final=1 ;;
-    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
     -*) die "unknown option $a" ;;
     *) [ -z "$target" ] && target=$a || die "more than one target" ;;
   esac
@@ -75,6 +76,9 @@ if [ "$apply" = 0 ]; then
 fi
 
 mkdir -p "$dest"
+# logs/ must exist before a job is submitted: Slurm cannot create the directory of --output
+# (missing directory -> JobLaunchFailure)
+mkdir -p "$SERVER_DIR/logs" "$SERVER_DIR/results"
 rsync "${rsync_opts[@]}" "$REPO_DIR/" "$dest/"
 
 {

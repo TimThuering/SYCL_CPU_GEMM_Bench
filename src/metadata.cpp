@@ -34,10 +34,15 @@ std::string cpuinfo_value(const std::string& key) {
   return "";
 }
 
-// x86: "model name", RISC-V: "uarch", ARM: only implementer / part codes
+// x86: "model name"; RISC-V: "uarch" if present, else the vendor / architecture / implementation IDs;
+// ARM: only implementer / part codes
 std::string cpu_model() {
   if (auto v = cpuinfo_value("model name"); !v.empty()) return v;
   if (auto v = cpuinfo_value("uarch"); !v.empty()) return v;
+  const auto mvendorid = cpuinfo_value("mvendorid");
+  if (!mvendorid.empty())
+    return "mvendorid " + mvendorid + ", marchid " + cpuinfo_value("marchid") + ", mimpid " +
+           cpuinfo_value("mimpid");
   const auto impl = cpuinfo_value("CPU implementer");
   const auto part = cpuinfo_value("CPU part");
   if (!impl.empty() || !part.empty()) return "CPU implementer " + impl + ", CPU part " + part;
