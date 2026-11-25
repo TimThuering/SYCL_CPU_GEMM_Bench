@@ -6,7 +6,6 @@
 #include <cstddef>
 
 #include "bench/config.hpp"
-#include "bench/errors.hpp"
 #include "gemm_args.hpp"
 
 namespace kernels::naive {
