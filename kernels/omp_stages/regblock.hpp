@@ -4,18 +4,99 @@
 #include <cstddef>
 
 #include "bench/config.hpp"
-#include "bench/errors.hpp"
 #include "gemm_args.hpp"
+#include "params.hpp"
+
 
 namespace kernels::omp::regblock {
+    // Scratch memory this stage needs (bytes, multiple of sizeof(double))
+    inline std::size_t workspace_bytes(const bench::Problem &) { return 0; }
 
-// Scratch memory this stage needs (bytes, multiple of sizeof(double))
-inline std::size_t workspace_bytes(const bench::Problem&) { return 0; }
+    // Computes C; returns when done
+    inline void run(const GemmArgs &g) {
+        const double *a = g.a;
+        const double *b = g.b;
+        double *c = g.c;
+        const std::size_t m = g.m, n = g.n, k = g.k;
+        const std::size_t lda = g.lda, ldb = g.ldb, ldc = g.ldc;
 
-// Computes C; returns when done
-inline void run(const GemmArgs& g) {
-  (void)g;
-  throw bench::UnsupportedError("stage 'regblock' is not implemented");
-}
+        const std::size_t blocks_m = (m + gemm::MR - 1) / gemm::MR; // ceil(m / MR)
+        const std::size_t blocks_n = (n + gemm::NR - 1) / gemm::NR;
 
+#pragma omp parallel for collapse(2) schedule(static)
+        for (std::size_t i = 0; i < blocks_m; ++i) {
+            for (std::size_t j = 0; j < blocks_n; ++j) {
+                // small arrays to be kept in registers
+                double acc_r[gemm::MR][gemm::NR] = {};
+                double a_r[gemm::MR] = {};
+                double b_r[gemm::NR] = {};
+
+                const std::size_t i0 = i * gemm::MR;
+                const std::size_t j0 = j * gemm::NR;
+                const bool full = (i0 + gemm::MR <= m) && (j0 + gemm::NR <= n);
+
+                if (full) {
+                    // no need for border checks
+                    for (std::size_t kk = 0; kk < k; ++kk) {
+                        // load a_r values
+                        for (std::size_t ii = 0; ii < gemm::MR; ++ii) {
+                            a_r[ii] = a[(i0 + ii) * lda + kk];
+                        }
+
+                        // load b_r values
+                        for (std::size_t jj = 0; jj < gemm::NR; ++jj) {
+                            b_r[jj] = b[kk * ldb + j0 + jj];
+                        }
+
+                        // a_r^T * b_r (outer product)
+                        for (std::size_t ii = 0; ii < gemm::MR; ++ii) {
+                            for (std::size_t jj = 0; jj < gemm::NR; ++jj) {
+                                acc_r[ii][jj] += a_r[ii] * b_r[jj];
+                            }
+                        }
+                    }
+
+                    // write back local result to c
+                    for (std::size_t ii = 0; ii < gemm::MR; ++ii) {
+                        for (std::size_t jj = 0; jj < gemm::NR; ++jj) {
+                            c[(i0 + ii) * ldc + j0 + jj] = acc_r[ii][jj];
+                        }
+                    }
+                } else {
+                    // check borders as block does not fully overlay with matrix
+                    for (std::size_t kk = 0; kk < k; ++kk) {
+                        // load a_r values
+                        for (std::size_t ii = 0; ii < gemm::MR; ++ii) {
+                            if (i0 + ii < m) {
+                                a_r[ii] = a[(i0 + ii) * lda + kk];
+                            }
+                        }
+
+                        // load b_r values
+                        for (std::size_t jj = 0; jj < gemm::NR; ++jj) {
+                            if (j0 + jj < n) {
+                                b_r[jj] = b[kk * ldb + j0 + jj];
+                            }
+                        }
+
+                        // a_r^T * b_r (outer product)
+                        for (std::size_t ii = 0; ii < gemm::MR; ++ii) {
+                            for (std::size_t jj = 0; jj < gemm::NR; ++jj) {
+                                acc_r[ii][jj] += a_r[ii] * b_r[jj];
+                            }
+                        }
+                    }
+
+                    // write back local result to c
+                    for (std::size_t ii = 0; ii < gemm::MR; ++ii) {
+                        for (std::size_t jj = 0; jj < gemm::NR; ++jj) {
+                            if (i0 + ii < m && j0 + jj < n) {
+                                c[(i0 + ii) * ldc + j0 + jj] = acc_r[ii][jj];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 } // namespace kernels::omp::regblock
