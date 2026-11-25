@@ -16,6 +16,7 @@
 #include "bench/verify.hpp"
 #include "backend_sycl/arena.hpp"
 #include "backend_sycl/device.hpp"
+#include "backend_sycl/queue.hpp"
 #include "backend_sycl/stages.hpp"
 
 namespace {
@@ -27,8 +28,9 @@ void list_devices() {
                 << dev.get_info<sycl::info::device::name>() << "\n";
     }
   }
-  sycl::queue q{sycl::default_selector_v};
-  std::cout << "default device: " << q.get_device().get_info<sycl::info::device::name>() << "\n";
+  const sycl::queue q = bench::make_queue();
+  std::cout << "benchmark device (CPU): " << q.get_device().get_info<sycl::info::device::name>() << " ["
+            << q.get_device().get_platform().get_info<sycl::info::platform::name>() << "]\n";
 }
 
 // Setup and benchmark; fills the record step by step (throws on failure)
@@ -39,8 +41,8 @@ void run(bench::ResultRecord& rec) {
   if (stage == nullptr)
     throw bench::UnsupportedError("stage '" + cfg.stage + "' is not registered in this build");
 
-  // In-order queue: kernels submitted by one stage run one after another
-  sycl::queue q{sycl::default_selector_v, sycl::property::queue::in_order{}};
+  // CPU device, in-order queue: kernels submitted by one stage run one after another
+  sycl::queue q = bench::make_queue();
   rec.device = bench::query_device(q.get_device());
 
   bench::Arena arena(q, cfg.problem, stage->workspace_bytes(cfg.problem));

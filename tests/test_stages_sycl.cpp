@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "backend_sycl/arena.hpp"
+#include "backend_sycl/queue.hpp"
 #include "backend_sycl/stages.hpp"
 #include "bench/errors.hpp"
 #include "bench/make_args.hpp"
@@ -21,8 +22,13 @@ namespace {
 using namespace stage_tests;
 
 sycl::queue& test_queue() {
-  static sycl::queue q{sycl::default_selector_v, sycl::property::queue::in_order{}};
+  static sycl::queue q = bench::make_queue();  // same CPU queue as the benchmark
   return q;
+}
+
+TEST(Queue, IsCpuDevice) {
+  EXPECT_TRUE(test_queue().get_device().is_cpu())
+      << test_queue().get_device().get_info<sycl::info::device::name>();
 }
 
 TEST(StageTable, AllStagesRegistered) {
