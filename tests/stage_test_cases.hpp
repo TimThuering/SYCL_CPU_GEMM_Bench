@@ -18,9 +18,12 @@ struct Shape {
 };
 
 inline std::vector<Shape> shapes() {
+  // The last two have K > KC (several K panels, the last one shorter) and M > MC (several row
+  // blocks, the last one partial) for the packed stage with its default KC = 256, MC = 64.
   const std::vector<Shape> base = {
       {1, 1, 1, 0},    {7, 5, 3, 0},     {3, 7, 5, 0},      {33, 17, 65, 0},
       {64, 64, 64, 0}, {100, 1, 100, 0}, {1, 100, 100, 0},  {129, 131, 127, 0},
+      {67, 37, 529, 0}, {130, 9, 300, 0},
   };
   std::vector<Shape> out;
   for (const auto& s : base) {

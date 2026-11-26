@@ -1,7 +1,8 @@
 # GoogleTest tests (only with -DBENCH_BUILD_TESTS=ON)
 #
 #   bench_unit_tests   harness core (SYCL-free): data, layout, CLI, verification, timing, JSON
-#   bench_stage_tests  every stage of this build (SYCL or OpenMP twin) on odd sizes, verified
+#   bench_stage_tests  every stage of this build (SYCL or OpenMP twin) on odd sizes, verified;
+#                      plus the packing kernels of the packed stage, slot by slot
 #   cli_*              end-to-end runs of the gemm_bench binary (exit codes)
 
 include(FetchContent)
@@ -24,7 +25,10 @@ add_executable(bench_unit_tests
 )
 target_link_libraries(bench_unit_tests PRIVATE bench_core GTest::gtest_main)
 
-add_executable(bench_stage_tests test_stages_${BENCH_BACKEND}.cpp)
+add_executable(bench_stage_tests
+  test_stages_${BENCH_BACKEND}.cpp
+  test_packing_${BENCH_BACKEND}.cpp
+)
 target_link_libraries(bench_stage_tests PRIVATE bench_backend GTest::gtest_main)
 
 # PRE_TEST: tests are listed when ctest runs, not at build time (no SYCL runtime start during the build)
