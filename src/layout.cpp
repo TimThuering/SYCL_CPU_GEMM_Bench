@@ -33,18 +33,26 @@ ArenaLayout compute_layout(const Problem& p, std::size_t workspace_bytes) {
   return l;
 }
 
-void check_arena_alignment(const void* ptr, const std::string& alloc_kind) {
-  const auto addr = reinterpret_cast<std::uintptr_t>(ptr);
-  if (addr % arena_page != 0)
-    throw std::runtime_error(alloc_kind + " returned an address that is not " +
+std::size_t page_offset(const void* ptr) {
+  return static_cast<std::size_t>(reinterpret_cast<std::uintptr_t>(ptr) % arena_page);
+}
+
+void record_alignment(ArenaInfo& info, const void* base, bool require) {
+  info.requested_alignment = arena_page;
+  info.base_mod_page = page_offset(base);
+  info.alignment_honored = (info.base_mod_page == 0);
+  if (require && !info.alignment_honored)
+    throw std::runtime_error(info.alloc_kind + " returned an address that is not " +
                              std::to_string(arena_page) + "-byte aligned (address mod " +
-                             std::to_string(arena_page) + " = " + std::to_string(addr % arena_page) + ")");
+                             std::to_string(arena_page) + " = " + std::to_string(info.base_mod_page) +
+                             ") and --require-alignment is set");
 }
 
 void print_arena_info(std::ostream& os, const ArenaInfo& info) {
   const auto& l = info.layout;
   os << "arena:         " << info.alloc_kind << ", " << l.total_bytes << " bytes, "
-     << info.alignment << "-byte aligned\n"
+     << info.requested_alignment << "-byte alignment requested, base mod " << arena_page << " = "
+     << info.base_mod_page << (info.alignment_honored ? " (honored)" : " (NOT honored)") << "\n"
      << "  A  offset " << l.a_offset << ", " << l.a_bytes << " bytes\n"
      << "  B  offset " << l.b_offset << ", " << l.b_bytes << " bytes\n"
      << "  C  offset " << l.c_offset << ", " << l.c_bytes << " bytes\n"

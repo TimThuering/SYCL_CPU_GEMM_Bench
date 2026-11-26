@@ -36,7 +36,7 @@ void fill_nan(double* ptr, std::size_t count) {
 
 } // namespace
 
-Arena::Arena(const Problem& p, std::size_t workspace_bytes) : p_(p) {
+Arena::Arena(const Problem& p, std::size_t workspace_bytes, bool require_alignment) : p_(p) {
   if (workspace_bytes % sizeof(double) != 0)
     throw std::invalid_argument("workspace size must be a multiple of sizeof(double)");
 
@@ -50,8 +50,9 @@ Arena::Arena(const Problem& p, std::size_t workspace_bytes) : p_(p) {
   if (base_ == nullptr)
     throw std::runtime_error(info_.alloc_kind + " failed for " + std::to_string(layout.total_bytes) +
                              " bytes");
+  // record the alignment we got; abort only if required
   try {
-    check_arena_alignment(base_, info_.alloc_kind);
+    record_alignment(info_, base_, require_alignment);
   } catch (...) {
     std::free(base_);  // the destructor does not run if the constructor throws
     throw;

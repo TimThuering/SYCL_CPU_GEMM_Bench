@@ -34,7 +34,8 @@ void fill_nan(sycl::queue& q, double* ptr, std::size_t count) {
 
 } // namespace
 
-Arena::Arena(sycl::queue& q, const Problem& p, std::size_t workspace_bytes) : q_(q), p_(p) {
+Arena::Arena(sycl::queue& q, const Problem& p, std::size_t workspace_bytes, bool require_alignment)
+    : q_(q), p_(p) {
   if (workspace_bytes % sizeof(double) != 0)
     throw std::invalid_argument("workspace size must be a multiple of sizeof(double)");
 
@@ -48,9 +49,10 @@ Arena::Arena(sycl::queue& q, const Problem& p, std::size_t workspace_bytes) : q_
   if (base_ == nullptr)
     throw std::runtime_error(info_.alloc_kind + " failed for " + std::to_string(layout.total_bytes) +
                              " bytes");
-  // Do not rely on the implementation honoring the alignment argument
+  // Do not rely on the implementation honoring the alignment argument: record what we got
+  // (e.g. PoCL returns only 128-byte aligned memory); abort only if required
   try {
-    check_arena_alignment(base_, info_.alloc_kind);
+    record_alignment(info_, base_, require_alignment);
   } catch (...) {
     sycl::free(base_, q_);  // the destructor does not run if the constructor throws
     throw;

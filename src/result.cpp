@@ -77,6 +77,7 @@ ordered_json config_json(const Config& c) {
   j["ldb"] = p.ldb;
   j["ldc"] = p.ldc;
   j["ld_pad"] = c.ld_pad;
+  j["require_alignment"] = c.require_alignment;
   j["seed"] = c.seed;
   j["warmup"] = c.warmup;
   j["reps"] = c.reps;
@@ -110,7 +111,9 @@ ordered_json arena_json(const ArenaInfo& a) {
   const ArenaLayout& l = a.layout;
   ordered_json j;
   j["alloc_kind"] = a.alloc_kind;
-  j["alignment"] = a.alignment;
+  j["requested_alignment"] = a.requested_alignment;
+  j["base_mod_page"] = a.base_mod_page;
+  j["alignment_honored"] = a.alignment_honored;
   j["total_bytes"] = l.total_bytes;
   j["regions"] = {{"A", {{"offset", l.a_offset}, {"bytes", l.a_bytes}}},
                   {"B", {{"offset", l.b_offset}, {"bytes", l.b_bytes}}},

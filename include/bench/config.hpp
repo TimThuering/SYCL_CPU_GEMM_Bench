@@ -25,6 +25,7 @@ struct Config {
   Problem problem;
   std::size_t ld_pad = 0;      // extra elements per row (applied to lda, ldb, ldc)
   std::uint64_t seed = 123;    // data generation seed
+  bool require_alignment = false;  // abort if the arena is not page-aligned (default: only record it)
 
   // Run
   std::size_t warmup = 2;      // untimed iterations after the cold one

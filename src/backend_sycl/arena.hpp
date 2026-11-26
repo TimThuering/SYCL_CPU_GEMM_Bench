@@ -13,7 +13,8 @@ namespace bench {
 
 class Arena {
  public:
-  Arena(sycl::queue& q, const Problem& p, std::size_t workspace_bytes);
+  // require_alignment: abort if the base is not arena_page-aligned (otherwise only recorded)
+  Arena(sycl::queue& q, const Problem& p, std::size_t workspace_bytes, bool require_alignment = false);
   ~Arena();
   Arena(const Arena&) = delete;
   Arena& operator=(const Arena&) = delete;

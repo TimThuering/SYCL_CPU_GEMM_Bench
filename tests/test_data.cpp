@@ -51,10 +51,27 @@ TEST(Layout, RegionsPageAlignedAndDisjoint) {
   EXPECT_GE(l.total_bytes, l.ws_offset + l.ws_bytes);
 }
 
-TEST(Layout, AlignmentCheck) {
+TEST(Layout, AlignmentRecordedNotEnforced) {
   alignas(4096) static unsigned char buf[8192];
-  EXPECT_NO_THROW(bench::check_arena_alignment(buf, "test"));
-  EXPECT_THROW(bench::check_arena_alignment(buf + 16, "test"), std::runtime_error);
+  bench::ArenaInfo info;
+  info.alloc_kind = "test";
+
+  EXPECT_NO_THROW(bench::record_alignment(info, buf, false));
+  EXPECT_EQ(info.base_mod_page, 0u);
+  EXPECT_TRUE(info.alignment_honored);
+
+  // not page-aligned (like PoCL's 128-byte alignment): recorded, no abort by default
+  EXPECT_NO_THROW(bench::record_alignment(info, buf + 128, false));
+  EXPECT_EQ(info.base_mod_page, 128u);
+  EXPECT_FALSE(info.alignment_honored);
+  EXPECT_EQ(info.requested_alignment, bench::arena_page);
+}
+
+TEST(Layout, AlignmentRequired) {
+  alignas(4096) static unsigned char buf[8192];
+  bench::ArenaInfo info;
+  EXPECT_NO_THROW(bench::record_alignment(info, buf, true));
+  EXPECT_THROW(bench::record_alignment(info, buf + 128, true), std::runtime_error);
 }
 
 // Host-side copy of the arena initialization (A, B values with NaN padding, C NaN)

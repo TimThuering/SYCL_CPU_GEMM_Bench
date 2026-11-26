@@ -3,8 +3,10 @@
 //
 //   [ A: M x lda ][pad][ B: K x ldb ][pad][ C: M x ldc ][pad][ workspace ]
 //
-// The arena base is allocated page-aligned (checked after allocation) and every region starts
-// at a page boundary, so the layout is identical for all implementations.
+// The arena base is requested page-aligned and every region starts at a page offset from it.
+// Whether the implementation honored the alignment is checked after the allocation and recorded
+// (base_mod_page, alignment_honored); the run aborts only with --require-alignment. If the base is
+// not page-aligned, all regions are shifted by the same amount (their relative offsets stay pages).
 //
 // Workspace: scratch memory a stage needs in addition to A, B, C (e.g. the packing buffers
 // of the packed stage); 0 bytes for stages without one. It lives in the arena so it is
@@ -31,15 +33,21 @@ struct ArenaLayout {
 
 ArenaLayout compute_layout(const Problem& p, std::size_t workspace_bytes);
 
-// Throws std::runtime_error if ptr is not a multiple of arena_page
-void check_arena_alignment(const void* ptr, const std::string& alloc_kind);
+// Address of ptr modulo arena_page (0 = page-aligned)
+std::size_t page_offset(const void* ptr);
 
 // Recorded with every result
 struct ArenaInfo {
-  std::string alloc_kind;           // e.g. "sycl::aligned_alloc_device", "std::aligned_alloc"
+  std::string alloc_kind;              // e.g. "sycl::aligned_alloc_device", "std::aligned_alloc"
   ArenaLayout layout;
-  std::size_t alignment = arena_page;
+  std::size_t requested_alignment = arena_page;
+  std::size_t base_mod_page = 0;       // actual arena base address mod arena_page
+  bool alignment_honored = true;       // base_mod_page == 0
 };
+
+// Records the alignment of base in info; throws std::runtime_error if require is set and the
+// requested alignment was not honored (the caller frees the allocation).
+void record_alignment(ArenaInfo& info, const void* base, bool require);
 
 void print_arena_info(std::ostream& os, const ArenaInfo& info);
 

@@ -45,7 +45,7 @@ void run(bench::ResultRecord& rec) {
   sycl::queue q = bench::make_queue();
   rec.device = bench::query_device(q.get_device());
 
-  bench::Arena arena(q, cfg.problem, stage->workspace_bytes(cfg.problem));
+  bench::Arena arena(q, cfg.problem, stage->workspace_bytes(cfg.problem), cfg.require_alignment);
   rec.arena = arena.info();
   arena.initialize(cfg.seed);
   const GemmArgs args = bench::make_gemm_args(arena.matrices(), cfg.problem);

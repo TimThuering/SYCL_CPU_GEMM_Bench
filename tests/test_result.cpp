@@ -55,6 +55,20 @@ TEST(Result, CompleteRecord) {
   EXPECT_TRUE(j["arena"].is_null());
 }
 
+TEST(Result, ArenaAlignmentFields) {
+  auto r = full_record();
+  bench::ArenaInfo a;
+  a.alloc_kind = "sycl::aligned_alloc_device";
+  a.base_mod_page = 1664;
+  a.alignment_honored = false;
+  r.arena = a;
+  const json j = json::parse(bench::to_json(r));
+  EXPECT_EQ(j["arena"]["requested_alignment"], 4096);
+  EXPECT_EQ(j["arena"]["base_mod_page"], 1664);
+  EXPECT_EQ(j["arena"]["alignment_honored"], false);
+  EXPECT_EQ(j["config"]["require_alignment"], false);
+}
+
 TEST(Result, VerifyFailAndNonFinite) {
   auto r = full_record();
   r.verify->passed = false;

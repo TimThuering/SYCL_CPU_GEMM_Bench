@@ -83,7 +83,8 @@ CliResult parse_cli(int argc, char** argv) {
     ("k", "Columns of A / rows of B (overrides --size)", cxxopts::value<std::size_t>())
     ("ld-pad", "Extra elements per row (lda = K + pad, ldb = ldc = N + pad)",
         cxxopts::value<std::size_t>()->default_value(std::to_string(def.ld_pad)))
-    ("seed", "Data generation seed", cxxopts::value<std::uint64_t>()->default_value(std::to_string(def.seed)));
+    ("seed", "Data generation seed", cxxopts::value<std::uint64_t>()->default_value(std::to_string(def.seed)))
+    ("require-alignment", "Abort if the matrices are not page-aligned (default: record it and continue)");
 
   options.add_options("Run")
     ("warmup", "Untimed iterations after the cold one",
@@ -136,6 +137,7 @@ CliResult parse_cli(int argc, char** argv) {
     cfg.problem.k = r.count("k") ? r["k"].as<std::size_t>() : size;
     cfg.ld_pad = r["ld-pad"].as<std::size_t>();
     cfg.seed = r["seed"].as<std::uint64_t>();
+    cfg.require_alignment = r.count("require-alignment") > 0;
 
     cfg.warmup = r["warmup"].as<std::size_t>();
     cfg.reps = r["reps"].as<std::size_t>();

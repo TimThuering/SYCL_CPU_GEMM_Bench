@@ -30,13 +30,14 @@ TEST(Cli, Defaults) {
   EXPECT_EQ(c.warmup, 2u);
   EXPECT_EQ(c.reps, 10u);
   EXPECT_TRUE(c.verify);
+  EXPECT_FALSE(c.require_alignment);
   EXPECT_TRUE(c.output.empty());
   EXPECT_FALSE(c.quiet);
 }
 
 TEST(Cli, AllOptions) {
   const auto r = parse({"--stage", "regblock", "--size", "100", "-n", "77", "-k", "33", "--ld-pad", "5",
-                        "--seed", "7", "--warmup", "0", "--reps", "3", "--no-verify", "-o", "out.json",
+                        "--seed", "7", "--warmup", "0", "--reps", "3", "--no-verify", "--require-alignment", "-o", "out.json",
                         "--label", "a b", "-q"});
   const auto& c = r.config;
   EXPECT_EQ(c.stage, "regblock");
@@ -50,6 +51,7 @@ TEST(Cli, AllOptions) {
   EXPECT_EQ(c.warmup, 0u);
   EXPECT_EQ(c.reps, 3u);
   EXPECT_FALSE(c.verify);
+  EXPECT_TRUE(c.require_alignment);
   EXPECT_EQ(c.output, "out.json");
   EXPECT_EQ(c.label, "a b");
   EXPECT_TRUE(c.quiet);
