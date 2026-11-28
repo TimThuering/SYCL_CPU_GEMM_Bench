@@ -9,7 +9,8 @@
 #   STAGES          e.g. "naive"
 #   SIZES           array of "M N K", e.g. ("1000 1000 1000" "1024 1024 1024")
 #   THREADS         e.g. "1 node"  (numbers, or node / socket from the machine profile)
-#   FLOWS           optional, default: all flows of the machine profile
+#   FLOWS           optional, default: all flows of the machine profile; flows without a built binary
+#                   are skipped with a warning (campaign.json: flows_skipped)
 #   REPS            optional, process repetitions per combination (default 1)
 #   GEMM_ARGS       optional array of further gemm_bench options, e.g. (--warmup 2 --reps 10)
 #
@@ -29,7 +30,15 @@ source "$def"
 [ -n "$CAMPAIGN_TAG" ] && [ -n "$CAMPAIGN_NAME" ] || die "$def: CAMPAIGN_TAG and CAMPAIGN_NAME required"
 [ -n "$STAGES" ] && [ ${#SIZES[@]} -gt 0 ] && [ -n "$THREADS" ] || die "$def: STAGES, SIZES and THREADS required"
 [[ $CAMPAIGN_TAG$CAMPAIGN_NAME != *_* ]] || die "CAMPAIGN_TAG / CAMPAIGN_NAME must not contain '_'"
-for f in $FLOWS; do flow_check "$f"; [ -x "$GB_BUILD/$f/gemm_bench" ] || die "flow $f not built"; done
+# Flows without a binary (e.g. failed configure) are skipped, so one broken flow does not cost the others
+built=""; FLOWS_SKIPPED=""
+for f in $FLOWS; do
+  flow_check "$f"
+  if [ -x "$GB_BUILD/$f/gemm_bench" ]; then built+="${built:+ }$f"
+  else FLOWS_SKIPPED+="${FLOWS_SKIPPED:+ }$f"; log "warning: flow $f not built ($GB_BUILD/$f/gemm_bench), skipped"; fi
+done
+[ -n "$built" ] || die "none of the flows is built: $FLOWS"
+FLOWS=$built
 
 threads_list=()
 for t in $THREADS; do
@@ -58,6 +67,7 @@ write_campaign_json() {  # <end time or empty>
     echo "  \"start\": $(json_str "$start"),"
     echo "  \"end\": $([ -n "$1" ] && json_str "$1" || echo null),"
     echo "  \"flows\": $(json_str "$FLOWS"),"
+    echo "  \"flows_skipped\": $(json_str "$FLOWS_SKIPPED"),"
     echo "  \"stages\": $(json_str "$STAGES"),"
     echo "  \"sizes\": $(json_str "${SIZES[*]}"),"
     echo "  \"threads\": $(json_str "${threads_list[*]}"),"

@@ -79,8 +79,11 @@ sbatch -p peak src/scripts/server/build.sbatch acpp_omp_accel   # single flows
 sbatch -p peak --export=ALL,GB_CLEAN=1 src/scripts/server/build.sbatch
 ```
 
-Per flow: module load, CMake, build, `ctest`; logs in `logs/build_<machine>_<flow>.log`, summary at the end
-of the job output (`logs/gemm-build_<job>.out`).
+Per flow: module load, CMake, build, `ctest`, `gemm_bench --list-devices`; logs in
+`logs/build_<machine>_<flow>.log`, summary at the end of the job output (`logs/gemm-build_<job>.out`).
+The job fails if any flow fails to build or has failing tests; a campaign that should run anyway is chained
+with `--dependency=afterany:<build job>` (flows without a binary are skipped by the campaign).
+Known test failures: stage `ref` on the PoCL flows (harness test only; see `docs/building.md`, Tests).
 
 ### 3. Run a campaign (server, compute node)
 
@@ -90,7 +93,8 @@ sbatch -p peak --export=ALL,STAGE=naive src/scripts/server/campaign.sbatch src/s
 ```
 
 A campaign definition (`scripts/server/campaigns/*.sh`) lists tag, name, stages, sizes, thread counts,
-flows, repetitions and further `gemm_bench` options; see the header of `campaign.sh`. Single runs:
+flows, repetitions and further `gemm_bench` options; see the header of `campaign.sh`. Flows of the list that
+are not built are skipped with a warning and listed in `campaign.json` (`flows_skipped`). Single runs:
 `bash src/scripts/server/run_one.sh <flow> <threads> <out.json> -s naive --size 1000`.
 
 ### 4. Pull the results (local)
@@ -115,6 +119,7 @@ Sorted by the campaign tag into the analysis directory: `data/dev/S1_naive|S2_in
 | `dpcpp_native_novecz` | `dpcpp/7.1.0_nativecpu` | DPC++ `native_cpu`, Vecz off | same |
 | `dpcpp_pocl` | `dpcpp/7.1.0_nativecpu_pocl` | DPC++ `spir64` (JIT by PoCL) | PoCL pthread, `POCL_AFFINITY=1` |
 | `omp_twin` | `llvm/21.1.8` | clang++, `SYCL_IMPL=none` | OpenMP, as above |
+| `opencl_pocl` | `pocl/7.2_pthread` | clang++, `SYCL_IMPL=none_opencl` (OpenCL C kernels, JIT by PoCL) | PoCL pthread, `POCL_AFFINITY=1` |
 
 Every run is confined to the first t cores with `taskset`; JIT and kernel caches go to a fresh
 temporary directory per run (the cold iteration always includes the kernel compilation).

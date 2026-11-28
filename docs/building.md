@@ -75,6 +75,12 @@ Configure a flow with `-DBENCH_BUILD_TESTS=ON`, build, then run `ctest` in the b
 | `bench_stage_tests` | every stage of this flow × 16 problem shapes (odd, rectangular, 1×1×1, with/without row padding), each run twice (catches accumulating onto C), verified; stages that are not implemented are reported as *skipped* |
 | `cli_ref`, `cli_usage_exit_code` | end-to-end runs of `gemm_bench` (exit codes 0 and 2) |
 
+Known failure on Monte Cimone: stage `ref` (all shapes and `cli_ref`) on `opencl_pocl`, expected likewise
+on `acpp_pocl` / `dpcpp_pocl` (`single_task`, same mechanism). Its kernel calls no OpenCL built-in function, and the RISC-V patch of the PoCL
+installation (`setup/pocl-riscv-features-abi.patch`) takes the target features for code generation from
+such functions; without them the kernel is compiled for soft-float and cannot be loaded, so it never runs.
+The study stages are not affected (they all use the work-item index). `ref` is a harness test only.
+
 Single tests: `ctest -R regblock`, or `./tests/bench_stage_tests --gtest_filter='*regblock*'` for the
 GoogleTest output with the failure message.
 

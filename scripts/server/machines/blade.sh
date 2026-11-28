@@ -6,7 +6,7 @@ GB_MODULE_TREE=$HOME/.modulefiles_sg2042
 GB_THREADS_NODE=128
 GB_THREADS_SOCKET=64
 
-GB_FLOWS="acpp_omp_accel acpp_omp_libonly acpp_generic acpp_pocl dpcpp_native dpcpp_native_novecz dpcpp_pocl omp_twin"
+GB_FLOWS="acpp_omp_accel acpp_omp_libonly acpp_generic acpp_pocl dpcpp_native dpcpp_native_novecz dpcpp_pocl omp_twin opencl_pocl"
 
 gb_cpu_list() { echo "0-$(($1 - 1))"; }
 
