@@ -37,6 +37,8 @@ for f in "${flows[@]}"; do
       cache=$(mktemp -d); trap 'rm -rf "$cache"' EXIT
       flow_run_env "$f" "${GB_TEST_THREADS:-8}" "$cache"
       (cd "$dir" && ctest --output-on-failure) || exit 12
+      echo "== devices (run-time environment of the tests):"
+      "$dir/gemm_bench" --list-devices || exit 12
     fi
   ) > "$logf" 2>&1
   case $? in

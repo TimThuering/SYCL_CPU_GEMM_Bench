@@ -36,10 +36,15 @@ elseif(SYCL_IMPL STREQUAL "none_opencl")
   if(NOT SYCL_TARGETS STREQUAL "")
     message(WARNING "SYCL_TARGETS is ignored for SYCL_IMPL=none_opencl")
   endif()
-  # Headers: preferably those of the PoCL installation ($POCL_ROOT, set by the pocl module), so they
-  # match the runtime. Library: the ICD loader (libOpenCL); systems without the unversioned
-  # development symlink only have libOpenCL.so.1.
-  find_path(OpenCL_INCLUDE_DIR NAMES CL/cl.h HINTS "$ENV{POCL_ROOT}/include")
+  # Headers: those of the PoCL installation ($POCL_ROOT, set by the pocl module) if available, so they
+  # match the runtime and are the same on every machine (searched there exclusively first; otherwise
+  # e.g. a loader module in CMAKE_PREFIX_PATH would win), else the standard locations.
+  # Library: the ICD loader (libOpenCL); systems without the unversioned development symlink only
+  # have libOpenCL.so.1.
+  if(DEFINED ENV{POCL_ROOT})
+    find_path(OpenCL_INCLUDE_DIR NAMES CL/cl.h PATHS "$ENV{POCL_ROOT}/include" NO_DEFAULT_PATH)
+  endif()
+  find_path(OpenCL_INCLUDE_DIR NAMES CL/cl.h)
   find_library(OpenCL_LIBRARY NAMES OpenCL libOpenCL.so.1)
   find_package(OpenCL 3.0 REQUIRED)
   target_link_libraries(bench_flags INTERFACE OpenCL::OpenCL)

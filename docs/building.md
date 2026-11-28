@@ -57,8 +57,8 @@ Backend selection at run time (environment, as before): `ACPP_VISIBILITY_MASK`, 
 `OCL_ICD_VENDORS`/`OCL_ICD_FILENAMES`, `POCL_DEVICES`, ...
 
 OpenCL reference (`none_opencl`): needs the OpenCL headers (3.0) and the ICD loader `libOpenCL`, no
-`FetchContent`. CMake looks for the headers in `$POCL_ROOT/include` first (set by the `pocl` module, so
-headers and runtime match), then in the standard locations; the library may be `libOpenCL.so` or only
+`FetchContent`. CMake takes the headers from `$POCL_ROOT/include` if `POCL_ROOT` is set (by the `pocl`
+module, so headers and runtime match on every machine), otherwise from the standard locations; the library may be `libOpenCL.so` or only
 `libOpenCL.so.1`. Other locations: `-DOpenCL_INCLUDE_DIR=... -DOpenCL_LIBRARY=...`. The benchmark device
 is the first CPU device of the first platform that has one (`--list-devices` shows all).
 The OpenCL C kernels (`*.cl`) are embedded into the binary as strings at build time
