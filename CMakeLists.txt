@@ -79,17 +79,22 @@ else()
   set(BENCH_BACKEND sycl)
 endif()
 set(BENCH_BACKEND_SOURCES
+  src/backend_${BENCH_BACKEND}/arena.cpp
   src/backend_${BENCH_BACKEND}/device.cpp
   src/backend_${BENCH_BACKEND}/stages.cpp
 )
 if(BENCH_BACKEND STREQUAL "opencl")
-  list(APPEND BENCH_BACKEND_SOURCES src/backend_opencl/runtime.cpp)
-else()
-  list(APPEND BENCH_BACKEND_SOURCES src/backend_${BENCH_BACKEND}/arena.cpp)
+  list(APPEND BENCH_BACKEND_SOURCES src/backend_opencl/program.cpp src/backend_opencl/runtime.cpp)
 endif()
 add_library(bench_backend STATIC ${BENCH_BACKEND_SOURCES})
 target_include_directories(bench_backend PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(bench_backend PUBLIC bench_core)
+
+# OpenCL C kernel sources, embedded as strings (compiled by the OpenCL driver at run time)
+if(BENCH_BACKEND STREQUAL "opencl")
+  include(OpenClEmbed)
+  bench_embed_cl(bench_backend src/backend_opencl/init.cl)
+endif()
 
 # -----------------------------------------------------------------------------
 # Driver: one executable name for every flow

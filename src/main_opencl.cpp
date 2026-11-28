@@ -9,6 +9,7 @@
 #include "bench/errors.hpp"
 #include "bench/metadata.hpp"
 #include "bench/result.hpp"
+#include "backend_opencl/arena.hpp"
 #include "backend_opencl/device.hpp"
 #include "backend_opencl/runtime.hpp"
 #include "backend_opencl/stages.hpp"
@@ -35,6 +36,10 @@ void run(bench::ResultRecord& rec) {
 
   const bench::ClRuntime rt = bench::make_runtime();
   rec.device = bench::query_device(rt.device);
+
+  bench::Arena arena(rt, cfg.problem, stage->workspace_bytes(cfg.problem), cfg.require_alignment);
+  rec.arena = arena.info();
+  arena.initialize(cfg.seed);
 }
 
 } // namespace

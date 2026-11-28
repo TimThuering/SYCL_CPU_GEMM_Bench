@@ -61,6 +61,8 @@ OpenCL reference (`none_opencl`): needs the OpenCL headers (3.0) and the ICD loa
 headers and runtime match), then in the standard locations; the library may be `libOpenCL.so` or only
 `libOpenCL.so.1`. Other locations: `-DOpenCL_INCLUDE_DIR=... -DOpenCL_LIBRARY=...`. The benchmark device
 is the first CPU device of the first platform that has one (`--list-devices` shows all).
+The OpenCL C kernels (`*.cl`) are embedded into the binary as strings at build time
+(`cmake/OpenClEmbed.cmake`) and compiled by the OpenCL driver at run time.
 
 ## Tests
 

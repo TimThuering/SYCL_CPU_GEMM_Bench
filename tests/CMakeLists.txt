@@ -27,17 +27,21 @@ target_link_libraries(bench_unit_tests PRIVATE bench_core GTest::gtest_main)
 gtest_discover_tests(bench_unit_tests DISCOVERY_MODE PRE_TEST)
 
 if(BENCH_BACKEND STREQUAL "opencl")
-  return()
+  add_executable(bench_stage_tests test_arena_opencl.cpp)
+else()
+  add_executable(bench_stage_tests
+    test_stages_${BENCH_BACKEND}.cpp
+    test_packing_${BENCH_BACKEND}.cpp
+  )
 endif()
-
-add_executable(bench_stage_tests
-  test_stages_${BENCH_BACKEND}.cpp
-  test_packing_${BENCH_BACKEND}.cpp
-)
 target_link_libraries(bench_stage_tests PRIVATE bench_backend GTest::gtest_main)
 
 # PRE_TEST: tests are listed when ctest runs, not at build time (no SYCL runtime start during the build)
 gtest_discover_tests(bench_stage_tests DISCOVERY_MODE PRE_TEST)
+
+if(BENCH_BACKEND STREQUAL "opencl")
+  return()
+endif()
 
 # End-to-end: the reference stage runs and verifies (exit 0), an invalid command line gives exit 2
 add_test(NAME cli_ref

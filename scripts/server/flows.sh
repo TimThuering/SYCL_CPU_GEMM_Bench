@@ -9,11 +9,13 @@
 #   dpcpp_native_novecz  dpcpp/7.1.0_nativecpu     DPC++ native_cpu, Vecz off        Native CPU pool, not pinned
 #   dpcpp_pocl       dpcpp/7.1.0_nativecpu_pocl    DPC++ spir64 (JIT by PoCL)        PoCL pthread, POCL_AFFINITY
 #   omp_twin         llvm/21.1.8                   clang++, SYCL_IMPL=none           OpenMP threads, pinned
+#   opencl_pocl      pocl/7.2_pthread              clang++, SYCL_IMPL=none_opencl    PoCL pthread, POCL_AFFINITY
+#                                                  (kernels: OpenCL C, JIT by PoCL)
 #
 # Every run is confined with taskset to the first t cores (same core set for all flows);
 # pinning inside that set only where the runtime supports it natively.
 
-GB_ALL_FLOWS="acpp_omp_accel acpp_omp_libonly acpp_generic acpp_pocl dpcpp_native dpcpp_native_novecz dpcpp_pocl omp_twin"
+GB_ALL_FLOWS="acpp_omp_accel acpp_omp_libonly acpp_generic acpp_pocl dpcpp_native dpcpp_native_novecz dpcpp_pocl omp_twin opencl_pocl"
 
 flow_check() {  # <flow>
   case " $GB_ALL_FLOWS " in *" $1 "*) ;; *) die "unknown flow '$1' (known: $GB_ALL_FLOWS)" ;; esac
@@ -26,6 +28,7 @@ flow_modules() {  # <flow> -> module names
     dpcpp_native|dpcpp_native_novecz) echo dpcpp/7.1.0_nativecpu ;;
     dpcpp_pocl) echo dpcpp/7.1.0_nativecpu_pocl ;;
     omp_twin) echo llvm/21.1.8 ;;
+    opencl_pocl) echo pocl/7.2_pthread ;;
   esac
 }
 
@@ -56,6 +59,8 @@ flow_cmake_args() {  # <flow>
     # spir64: kernels are compiled by PoCL at run time (ISA fixed by the PoCL build); host code native ISA
     dpcpp_pocl)       FLOW_CMAKE_ARGS=("-DCMAKE_CXX_COMPILER=$DPCPP_ROOT/bin/clang++" -DSYCL_IMPL=dpcpp -DSYCL_TARGETS=spir64 "-DARCH_FLAGS=$arch") ;;
     omp_twin)         FLOW_CMAKE_ARGS=(-DCMAKE_CXX_COMPILER=clang++ -DSYCL_IMPL=none "-DARCH_FLAGS=$arch") ;;
+    # OpenCL headers from $POCL_ROOT/include, loader libOpenCL (system on peak, module on blade)
+    opencl_pocl)      FLOW_CMAKE_ARGS=(-DCMAKE_CXX_COMPILER=clang++ -DSYCL_IMPL=none_opencl "-DARCH_FLAGS=$arch") ;;
   esac
 }
 
@@ -73,8 +78,8 @@ flow_run_env() {  # <flow> <threads> <cache_dir>
       export POCL_DEVICES=pthread POCL_CPU_MAX_CU_COUNT=$t POCL_AFFINITY=1 POCL_CACHE_DIR=$cache/pocl ;;
     dpcpp_native|dpcpp_native_novecz)
       export ONEAPI_DEVICE_SELECTOR=native_cpu:cpu SYCL_NATIVE_CPU_HOST_THREADS=$t ;;
-    dpcpp_pocl)
-      export ONEAPI_DEVICE_SELECTOR=opencl:cpu
+    dpcpp_pocl|opencl_pocl)
+      if [ "$f" = dpcpp_pocl ]; then export ONEAPI_DEVICE_SELECTOR=opencl:cpu; fi
       export POCL_DEVICES=pthread POCL_CPU_MAX_CU_COUNT=$t POCL_AFFINITY=1 POCL_CACHE_DIR=$cache/pocl ;;
   esac
 }
