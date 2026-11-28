@@ -94,6 +94,9 @@ target_link_libraries(bench_backend PUBLIC bench_core)
 if(BENCH_BACKEND STREQUAL "opencl")
   include(OpenClEmbed)
   bench_embed_cl(bench_backend src/backend_opencl/init.cl)
+  foreach(_stage ref)
+    bench_embed_cl(bench_backend kernels/opencl_stages/${_stage}.cl)
+  endforeach()
 endif()
 
 # -----------------------------------------------------------------------------

@@ -30,8 +30,8 @@ std::uintptr_t kernel_address(const ClRuntime& rt, const ClProgram& program, con
   const ClMem out(clCreateBuffer(rt.context.get(), CL_MEM_WRITE_ONLY, sizeof(cl_ulong), nullptr, &err));
   cl_check(err, "clCreateBuffer");
   const ClKernel kernel = make_kernel(program, "base_address");
-  set_args(kernel, buffer.get(), out.get());
-  enqueue_1d(rt, kernel, 1);
+  set_args(kernel.get(), buffer.get(), out.get());
+  enqueue_1d(rt, kernel.get(), 1);
   cl_ulong address = 0;
   cl_check(clEnqueueReadBuffer(rt.queue.get(), out.get(), CL_TRUE, 0, sizeof(address), &address, 0, nullptr,
                                nullptr),
@@ -43,16 +43,16 @@ std::uintptr_t kernel_address(const ClRuntime& rt, const ClProgram& program, con
 void fill_matrix(const ClRuntime& rt, const ClProgram& program, const ClMem& buf, std::size_t rows,
                  std::size_t cols, std::size_t ld, MatrixId id, std::uint64_t seed) {
   const ClKernel kernel = make_kernel(program, "fill_matrix");
-  set_args(kernel, buf.get(), cl_ulong{cols}, cl_ulong{ld}, static_cast<cl_ulong>(id), cl_ulong{seed});
+  set_args(kernel.get(), buf.get(), cl_ulong{cols}, cl_ulong{ld}, static_cast<cl_ulong>(id), cl_ulong{seed});
   // One work-item per element, including the padding columns; dimension 0 = column
-  enqueue_2d(rt, kernel, ld, rows);
+  enqueue_2d(rt, kernel.get(), ld, rows);
 }
 
 // count consecutive doubles set to NaN
 void fill_nan(const ClRuntime& rt, const ClProgram& program, const ClMem& buf, std::size_t count) {
   const ClKernel kernel = make_kernel(program, "fill_nan");
-  set_args(kernel, buf.get());
-  enqueue_1d(rt, kernel, count);
+  set_args(kernel.get(), buf.get());
+  enqueue_1d(rt, kernel.get(), count);
 }
 
 } // namespace

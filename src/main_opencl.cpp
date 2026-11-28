@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <iostream>
+#include <vector>
 
 #include "bench/build_info.hpp"
 #include "bench/cli.hpp"
@@ -9,8 +10,12 @@
 #include "bench/errors.hpp"
 #include "bench/metadata.hpp"
 #include "bench/result.hpp"
+#include "bench/timing.hpp"
+#include "bench/verify.hpp"
 #include "backend_opencl/arena.hpp"
 #include "backend_opencl/device.hpp"
+#include "backend_opencl/gemm_args.hpp"
+#include "backend_opencl/program.hpp"
 #include "backend_opencl/runtime.hpp"
 #include "backend_opencl/stages.hpp"
 
@@ -34,12 +39,34 @@ void run(bench::ResultRecord& rec) {
   if (stage == nullptr)
     throw bench::UnsupportedError("stage '" + cfg.stage + "' is not registered in this build");
 
+  // CPU device, in-order queue: kernels enqueued by one stage run one after another
   const bench::ClRuntime rt = bench::make_runtime();
   rec.device = bench::query_device(rt.device);
 
   bench::Arena arena(rt, cfg.problem, stage->workspace_bytes(cfg.problem), cfg.require_alignment);
   rec.arena = arena.info();
   arena.initialize(cfg.seed);
+  const bench::ClGemmArgs args = bench::make_cl_gemm_args(arena.matrices(), cfg.problem);
+
+  // Built on first use: the cold iteration includes the compilation of the stage's kernels
+  bench::ClStageProgram program(rt, stage->source);
+
+  // One iteration: enqueue the stage's work and wait for it
+  rec.timing = bench::time_iterations(
+      [&] {
+        stage->run(program, args);
+        bench::cl_check(clFinish(rt.queue.get()), "clFinish");
+      },
+      cfg.warmup, cfg.reps);
+  rec.os_threads = bench::os_thread_count();
+
+  if (cfg.verify) {
+    std::vector<double> c(cfg.problem.m * cfg.problem.ldc);
+    arena.copy_c_to_host(c.data());
+    rec.verify = bench::verify(cfg, c.data());
+  } else {
+    rec.verify = bench::VerifyResult{};  // performed = false
+  }
 }
 
 } // namespace
