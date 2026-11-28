@@ -1,7 +1,6 @@
 // Every OpenCL reference stage on many problem shapes, verified against the host reference.
 // Each stage runs twice: the second run starts from the result of the first, so a stage that
-// accumulates onto C instead of overwriting it fails. Stages not registered in the stage table
-// are skipped.
+// accumulates onto C instead of overwriting it fails.
 
 #include <gtest/gtest.h>
 
@@ -21,12 +20,16 @@ namespace {
 
 using namespace stage_tests;
 
+TEST(StageTable, AllStagesRegistered) {
+  for (const auto& s : bench::stage_names) EXPECT_NE(bench::find_stage(s.name), nullptr) << s.name;
+}
+
 class OpenClStageTest : public testing::TestWithParam<Param> {};
 
 TEST_P(OpenClStageTest, MatchesReference) {
   const auto& [name, shape] = GetParam();
   const bench::ClStage* stage = bench::find_stage(name);
-  if (stage == nullptr) GTEST_SKIP() << "stage '" << name << "' is not registered";
+  ASSERT_NE(stage, nullptr);
 
   const bench::ClRuntime rt = bench::make_runtime();
   const bench::Config cfg = make_config(name, shape);

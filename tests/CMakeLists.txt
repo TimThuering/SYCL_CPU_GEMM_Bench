@@ -30,6 +30,7 @@ if(BENCH_BACKEND STREQUAL "opencl")
   add_executable(bench_stage_tests
     test_arena_opencl.cpp
     test_stages_opencl.cpp
+    test_packing_opencl.cpp
   )
 else()
   add_executable(bench_stage_tests

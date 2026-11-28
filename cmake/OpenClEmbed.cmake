@@ -20,5 +20,5 @@ function(bench_embed_cl target file)
     VERBATIM
   )
   target_sources(${target} PRIVATE "${_out}")
-  target_include_directories(${target} PRIVATE "${BENCH_GENERATED_DIR}")
+  target_include_directories(${target} PUBLIC "${BENCH_GENERATED_DIR}")  # also for the tests
 endfunction()
