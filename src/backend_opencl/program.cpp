@@ -46,16 +46,26 @@ ClKernel make_kernel(const ClProgram& program, const char* name) {
   return kernel;
 }
 
+namespace {
+
+// Enqueue with the event recorded for finish() (execution status check)
+void enqueue(const ClRuntime& rt, cl_kernel kernel, cl_uint dims, const std::size_t* global) {
+  cl_event event = nullptr;
+  cl_check(clEnqueueNDRangeKernel(rt.queue.get(), kernel, dims, nullptr, global, nullptr, 0, nullptr, &event),
+           "clEnqueueNDRangeKernel");
+  rt.launches.emplace_back(ClEvent(event), kernel);
+}
+
+} // namespace
+
 void enqueue_1d(const ClRuntime& rt, cl_kernel kernel, std::size_t g0) {
   const std::size_t global[1] = {g0};
-  cl_check(clEnqueueNDRangeKernel(rt.queue.get(), kernel, 1, nullptr, global, nullptr, 0, nullptr, nullptr),
-           "clEnqueueNDRangeKernel");
+  enqueue(rt, kernel, 1, global);
 }
 
 void enqueue_2d(const ClRuntime& rt, cl_kernel kernel, std::size_t g0, std::size_t g1) {
   const std::size_t global[2] = {g0, g1};
-  cl_check(clEnqueueNDRangeKernel(rt.queue.get(), kernel, 2, nullptr, global, nullptr, 0, nullptr, nullptr),
-           "clEnqueueNDRangeKernel");
+  enqueue(rt, kernel, 2, global);
 }
 
 } // namespace bench

@@ -43,6 +43,7 @@ TEST(PackingOpenCl, AllSlots) {
       const bench::ClMem ws = to_buffer(rt, std::vector<double>((rows_p + cols_p) * KC, untouched));
       pack_b(prog, b.get(), ldb, sh.n, pc, kc, ws.get(), bp_offset);
       pack_a(prog, a.get(), lda, sh.m, pc, kc, ws.get());
+      ASSERT_NO_THROW(bench::finish(rt));
       std::vector<double> w((rows_p + cols_p) * KC);
       ASSERT_EQ(clEnqueueReadBuffer(rt.queue.get(), ws.get(), CL_TRUE, 0, w.size() * sizeof(double), w.data(), 0,
                                     nullptr, nullptr),

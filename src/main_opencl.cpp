@@ -55,7 +55,7 @@ void run(bench::ResultRecord& rec) {
   rec.timing = bench::time_iterations(
       [&] {
         stage->run(program, args);
-        bench::cl_check(clFinish(rt.queue.get()), "clFinish");
+        bench::finish(rt);  // clFinish + execution status of the stage's kernels
       },
       cfg.warmup, cfg.reps);
   rec.os_threads = bench::os_thread_count();

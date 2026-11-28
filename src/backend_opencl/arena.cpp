@@ -32,6 +32,7 @@ std::uintptr_t kernel_address(const ClRuntime& rt, const ClProgram& program, con
   const ClKernel kernel = make_kernel(program, "base_address");
   set_args(kernel.get(), buffer.get(), out.get());
   enqueue_1d(rt, kernel.get(), 1);
+  finish(rt);
   cl_ulong address = 0;
   cl_check(clEnqueueReadBuffer(rt.queue.get(), out.get(), CL_TRUE, 0, sizeof(address), &address, 0, nullptr,
                                nullptr),
@@ -104,7 +105,7 @@ void Arena::initialize(std::uint64_t seed) {
   fill_nan(rt_, init_program_, m_.c, p_.m * p_.ldc);
   if (m_.workspace_bytes > 0)
     fill_nan(rt_, init_program_, m_.workspace, m_.workspace_bytes / sizeof(double));
-  cl_check(clFinish(rt_.queue.get()), "clFinish");
+  finish(rt_);
 
   // Read back sampled elements and compare with the host value function (one read per sample)
   const auto samples = make_init_samples(p_, seed, init_check_count);

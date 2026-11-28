@@ -40,7 +40,7 @@ TEST_P(OpenClStageTest, MatchesReference) {
   bench::ClStageProgram program(rt, stage->source);
   for (int run = 0; run < 2; ++run) {
     stage->run(program, args);
-    ASSERT_EQ(clFinish(rt.queue.get()), CL_SUCCESS);
+    ASSERT_NO_THROW(bench::finish(rt));
   }
 
   std::vector<double> c(cfg.problem.m * cfg.problem.ldc);

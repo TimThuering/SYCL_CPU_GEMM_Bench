@@ -41,5 +41,6 @@ using ClQueue = ClHandle<cl_command_queue, clReleaseCommandQueue>;
 using ClMem = ClHandle<cl_mem, clReleaseMemObject>;
 using ClProgram = ClHandle<cl_program, clReleaseProgram>;
 using ClKernel = ClHandle<cl_kernel, clReleaseKernel>;
+using ClEvent = ClHandle<cl_event, clReleaseEvent>;
 
 } // namespace bench

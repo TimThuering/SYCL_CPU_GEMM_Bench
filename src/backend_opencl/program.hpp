@@ -53,7 +53,8 @@ void set_args(cl_kernel kernel, const Args&... args) {
 
 // Enqueue over a global range without a work-group size (chosen by the implementation, like a
 // SYCL range). OpenCL dimension 0 is the fastest-varying one: g0 corresponds to the rightmost
-// dimension of a SYCL range. Asynchronous; all sizes must be > 0.
+// dimension of a SYCL range. Asynchronous; all sizes must be > 0. The launch's event is recorded in
+// rt.launches and checked by finish(rt).
 void enqueue_1d(const ClRuntime& rt, cl_kernel kernel, std::size_t g0);
 void enqueue_2d(const ClRuntime& rt, cl_kernel kernel, std::size_t g0, std::size_t g1);
 
