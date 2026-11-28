@@ -11,7 +11,7 @@ Requirements: CMake >= 3.20, a C++17 compiler, internet access at configure time
 | Option | Values | Meaning |
 |---|---|---|
 | `CMAKE_CXX_COMPILER` | `acpp`, DPC++ `clang++`, `clang++` | compiler of the flow |
-| `SYCL_IMPL` | `acpp` \| `dpcpp` \| `none` | `none` = plain C++/OpenMP twin |
+| `SYCL_IMPL` | `acpp` \| `dpcpp` \| `none` \| `none_opencl` | `none` = plain C++/OpenMP twin, `none_opencl` = plain OpenCL reference (no SYCL involved in either) |
 | `SYCL_TARGETS` | e.g. `omp.accelerated`, `generic`, `native_cpu`, `spir64` | `--acpp-targets` / `-fsycl-targets` |
 | `SYCL_EXTRA_FLAGS` | string | extra SYCL flags (compile + link), e.g. Native CPU device flags |
 | `ARCH_FLAGS` | string | host ISA flags (compile + link) |
@@ -46,12 +46,21 @@ cmake -S $SRC -B $B/dpcpp_spir64 -DCMAKE_CXX_COMPILER=$DPCPP/bin/clang++ -DSYCL_
 # Plain C++/OpenMP twin
 cmake -S $SRC -B $B/omp_twin -DCMAKE_CXX_COMPILER=clang++ -DSYCL_IMPL=none -DARCH_FLAGS="$ARCH"
 
+# Plain OpenCL reference (host code: clang++; kernels: compiled at run time by the OpenCL driver, e.g. PoCL)
+cmake -S $SRC -B $B/opencl_pocl -DCMAKE_CXX_COMPILER=clang++ -DSYCL_IMPL=none_opencl -DARCH_FLAGS="$ARCH"
+
 cmake --build $B/<flow> -j
 $B/<flow>/gemm_bench
 ```
 
 Backend selection at run time (environment, as before): `ACPP_VISIBILITY_MASK`, `ONEAPI_DEVICE_SELECTOR`,
 `OCL_ICD_VENDORS`/`OCL_ICD_FILENAMES`, `POCL_DEVICES`, ...
+
+OpenCL reference (`none_opencl`): needs the OpenCL headers (3.0) and the ICD loader `libOpenCL`, no
+`FetchContent`. CMake looks for the headers in `$POCL_ROOT/include` first (set by the `pocl` module, so
+headers and runtime match), then in the standard locations; the library may be `libOpenCL.so` or only
+`libOpenCL.so.1`. Other locations: `-DOpenCL_INCLUDE_DIR=... -DOpenCL_LIBRARY=...`. The benchmark device
+is the first CPU device of the first platform that has one (`--list-devices` shows all).
 
 ## Tests
 

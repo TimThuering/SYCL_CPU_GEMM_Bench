@@ -5,7 +5,8 @@ project(SYCL_CPU_GEMM_Bench LANGUAGES CXX)
 # -----------------------------------------------------------------------------
 # Build configuration
 #
-#   SYCL_IMPL        acpp | dpcpp | none   (none = plain C++/OpenMP twin)
+#   SYCL_IMPL        acpp | dpcpp | none | none_opencl
+#                    (none = plain C++/OpenMP twin, none_opencl = plain OpenCL reference; no SYCL in both)
 #   SYCL_TARGETS     acpp:  value for --acpp-targets   (e.g. omp.accelerated, generic)
 #                    dpcpp: value for -fsycl-targets   (e.g. native_cpu, spir64)
 #   SYCL_EXTRA_FLAGS additional SYCL compiler flags (compile + link), e.g. device flags
@@ -17,8 +18,8 @@ project(SYCL_CPU_GEMM_Bench LANGUAGES CXX)
 # See docs/building.md for one configure line per flow.
 # -----------------------------------------------------------------------------
 
-set(SYCL_IMPL "none" CACHE STRING "SYCL implementation: acpp | dpcpp | none")
-set_property(CACHE SYCL_IMPL PROPERTY STRINGS acpp dpcpp none)
+set(SYCL_IMPL "none" CACHE STRING "SYCL implementation: acpp | dpcpp | none | none_opencl")
+set_property(CACHE SYCL_IMPL PROPERTY STRINGS acpp dpcpp none none_opencl)
 set(SYCL_TARGETS "" CACHE STRING "SYCL targets (acpp: --acpp-targets, dpcpp: -fsycl-targets)")
 set(SYCL_EXTRA_FLAGS "" CACHE STRING "Additional SYCL compiler flags (compile + link)")
 set(ARCH_FLAGS "" CACHE STRING "Host ISA flags (compile + link)")
@@ -68,18 +69,23 @@ target_link_libraries(bench_core PUBLIC bench_flags nlohmann_json::nlohmann_json
 add_dependencies(bench_core bench_git_info)
 
 # -----------------------------------------------------------------------------
-# Backend (SYCL or OpenMP twin): arena, device query, stage table with the kernels
+# Backend (SYCL, OpenMP twin or OpenCL reference): arena, device query, stage table with the kernels
 # -----------------------------------------------------------------------------
 if(SYCL_IMPL STREQUAL "none")
   set(BENCH_BACKEND omp)
+elseif(SYCL_IMPL STREQUAL "none_opencl")
+  set(BENCH_BACKEND opencl)
 else()
   set(BENCH_BACKEND sycl)
 endif()
-add_library(bench_backend STATIC
-  src/backend_${BENCH_BACKEND}/arena.cpp
+set(BENCH_BACKEND_SOURCES
   src/backend_${BENCH_BACKEND}/device.cpp
   src/backend_${BENCH_BACKEND}/stages.cpp
 )
+if(NOT BENCH_BACKEND STREQUAL "opencl")
+  list(APPEND BENCH_BACKEND_SOURCES src/backend_${BENCH_BACKEND}/arena.cpp)
+endif()
+add_library(bench_backend STATIC ${BENCH_BACKEND_SOURCES})
 target_include_directories(bench_backend PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(bench_backend PUBLIC bench_core)
 

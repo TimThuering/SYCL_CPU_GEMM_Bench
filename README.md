@@ -1,7 +1,8 @@
 # SYCL_CPU_GEMM_Bench
 
 GEMM benchmark (C = A·B, double, row-major) for comparing SYCL implementations on CPUs
-(AdaptiveCpp, DPC++, PoCL) with a sequence of optimization stages, plus a plain C++/OpenMP twin.
+(AdaptiveCpp, DPC++, PoCL) with a sequence of optimization stages, plus two references without SYCL:
+a plain C++/OpenMP twin (`SYCL_IMPL=none`) and a plain OpenCL version (`SYCL_IMPL=none_opencl`).
 One run = one stage, one problem size, one result JSON.
 
 | Stage | Name | Kernel |
@@ -17,7 +18,7 @@ One run = one stage, one problem size, one result JSON.
 ```
 CMakeLists.txt, cmake/     build (SYCL_IMPL / SYCL_TARGETS / ARCH_FLAGS, dependencies, build info)
 include/bench/, src/       harness: CLI, data, verification, timing, metadata, JSON, drivers
-src/backend_sycl|omp/      arena, device query, stage table per backend
+src/backend_sycl|omp|opencl/  arena, device query, stage table per backend
 kernels/                   GemmArgs, parameters, the stages (sycl_stages/, omp_stages/)
 tests/                     GoogleTest tests (-DBENCH_BUILD_TESTS=ON)
 scripts/local/             run on the local PC: sync to the server, pull results

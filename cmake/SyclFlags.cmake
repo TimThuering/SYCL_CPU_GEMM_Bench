@@ -32,8 +32,22 @@ elseif(SYCL_IMPL STREQUAL "none")
   target_link_libraries(bench_flags INTERFACE OpenMP::OpenMP_CXX)
   target_compile_definitions(bench_flags INTERFACE BENCH_SYCL=0 BENCH_IMPL_NONE=1)
 
+elseif(SYCL_IMPL STREQUAL "none_opencl")
+  if(NOT SYCL_TARGETS STREQUAL "")
+    message(WARNING "SYCL_TARGETS is ignored for SYCL_IMPL=none_opencl")
+  endif()
+  # Headers: preferably those of the PoCL installation ($POCL_ROOT, set by the pocl module), so they
+  # match the runtime. Library: the ICD loader (libOpenCL); systems without the unversioned
+  # development symlink only have libOpenCL.so.1.
+  find_path(OpenCL_INCLUDE_DIR NAMES CL/cl.h HINTS "$ENV{POCL_ROOT}/include")
+  find_library(OpenCL_LIBRARY NAMES OpenCL libOpenCL.so.1)
+  find_package(OpenCL 3.0 REQUIRED)
+  target_link_libraries(bench_flags INTERFACE OpenCL::OpenCL)
+  target_compile_definitions(bench_flags INTERFACE BENCH_SYCL=0 BENCH_IMPL_OPENCL=1
+                                                   CL_TARGET_OPENCL_VERSION=300)
+
 else()
-  message(FATAL_ERROR "Unknown SYCL_IMPL='${SYCL_IMPL}' (expected acpp | dpcpp | none)")
+  message(FATAL_ERROR "Unknown SYCL_IMPL='${SYCL_IMPL}' (expected acpp | dpcpp | none | none_opencl)")
 endif()
 
 target_compile_options(bench_flags INTERFACE ${_sycl_flags} ${_extra_flags} ${_arch_flags})
