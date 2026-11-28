@@ -10,6 +10,7 @@
 #include "bench/metadata.hpp"
 #include "bench/result.hpp"
 #include "backend_opencl/device.hpp"
+#include "backend_opencl/runtime.hpp"
 #include "backend_opencl/stages.hpp"
 
 namespace {
@@ -19,7 +20,8 @@ void list_devices() {
     const bench::DeviceInfo info = bench::query_device(d);
     std::cout << "  [" << info.platform_name << "] " << info.name << " (" << info.device_version << ")\n";
   }
-  const bench::DeviceInfo bench_dev = bench::query_device(bench::select_cpu_device());
+  const bench::ClRuntime rt = bench::make_runtime();
+  const bench::DeviceInfo bench_dev = bench::query_device(rt.device);
   std::cout << "benchmark device (CPU): " << bench_dev.name << " [" << bench_dev.platform_name << "]\n";
 }
 
@@ -30,6 +32,9 @@ void run(bench::ResultRecord& rec) {
   const bench::ClStage* stage = bench::find_stage(cfg.stage);
   if (stage == nullptr)
     throw bench::UnsupportedError("stage '" + cfg.stage + "' is not registered in this build");
+
+  const bench::ClRuntime rt = bench::make_runtime();
+  rec.device = bench::query_device(rt.device);
 }
 
 } // namespace

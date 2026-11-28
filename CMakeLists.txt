@@ -82,7 +82,9 @@ set(BENCH_BACKEND_SOURCES
   src/backend_${BENCH_BACKEND}/device.cpp
   src/backend_${BENCH_BACKEND}/stages.cpp
 )
-if(NOT BENCH_BACKEND STREQUAL "opencl")
+if(BENCH_BACKEND STREQUAL "opencl")
+  list(APPEND BENCH_BACKEND_SOURCES src/backend_opencl/runtime.cpp)
+else()
   list(APPEND BENCH_BACKEND_SOURCES src/backend_${BENCH_BACKEND}/arena.cpp)
 endif()
 add_library(bench_backend STATIC ${BENCH_BACKEND_SOURCES})
