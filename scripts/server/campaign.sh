@@ -13,6 +13,10 @@
 #                   are skipped with a warning (campaign.json: flows_skipped)
 #   REPS            optional, process repetitions per combination (default 1)
 #   GEMM_ARGS       optional array of further gemm_bench options, e.g. (--warmup 2 --reps 10)
+#   RUN_TIMEOUT     optional, seconds per run (default 3600); a run that exceeds it is killed, recorded
+#                   with exit code 124 (no JSON) and the campaign continues with the next run. Keep
+#                   (number of runs that may hit it) x RUN_TIMEOUT well below the job's walltime: a job
+#                   killed by Slurm loses all remaining runs (stages are the outer loop).
 #
 # Output: $GB_ROOT/results/<date>_<tag>_<name>/
 #   <host>/<flow>/<stage>_m<M>_n<N>_k<K>_t<threads>_r<rep>.json
@@ -25,11 +29,14 @@ source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 [ $# -eq 1 ] || die "usage: $0 <definition>"
 def=$(realpath "$1"); [ -f "$def" ] || die "no definition $1"
 FLOWS=$GB_FLOWS; REPS=1; GEMM_ARGS=(); SIZES=(); STAGES=""; THREADS=""; CAMPAIGN_TAG=""; CAMPAIGN_NAME=""
+RUN_TIMEOUT=3600
 # shellcheck source=/dev/null
 source "$def"
 [ -n "$CAMPAIGN_TAG" ] && [ -n "$CAMPAIGN_NAME" ] || die "$def: CAMPAIGN_TAG and CAMPAIGN_NAME required"
 [ -n "$STAGES" ] && [ ${#SIZES[@]} -gt 0 ] && [ -n "$THREADS" ] || die "$def: STAGES, SIZES and THREADS required"
 [[ $CAMPAIGN_TAG$CAMPAIGN_NAME != *_* ]] || die "CAMPAIGN_TAG / CAMPAIGN_NAME must not contain '_'"
+[[ $RUN_TIMEOUT =~ ^[1-9][0-9]*$ ]] || die "RUN_TIMEOUT must be a positive number of seconds"
+export GB_RUN_TIMEOUT=$RUN_TIMEOUT   # read by run_one.sh
 # Flows without a binary (e.g. failed configure) are skipped, so one broken flow does not cost the others
 built=""; FLOWS_SKIPPED=""
 for f in $FLOWS; do
@@ -72,6 +79,7 @@ write_campaign_json() {  # <end time or empty>
     echo "  \"sizes\": $(json_str "${SIZES[*]}"),"
     echo "  \"threads\": $(json_str "${threads_list[*]}"),"
     echo "  \"reps\": $REPS,"
+    echo "  \"run_timeout_s\": $RUN_TIMEOUT,"
     echo "  \"gemm_args\": $(json_str "${GEMM_ARGS[*]}"),"
     echo "  \"source_version\": $(json_str "$(tr '\n' ' ' < "$GB_SRC/SOURCE_VERSION" 2>/dev/null)"),"
     echo "  \"exit_codes\": {$(for c in "${!COUNT[@]}"; do printf '"%s": %s, ' "$c" "${COUNT[$c]}"; done | sed 's/, $//')}"
@@ -83,7 +91,7 @@ declare -A COUNT
 start=$(date '+%Y-%m-%dT%H:%M:%S%z')
 write_campaign_json ""
 total=$(( REPS * $(wc -w <<< "$STAGES") * ${#SIZES[@]} * ${#threads_list[@]} * $(wc -w <<< "$FLOWS") ))
-log "campaign $name on $host: $total runs -> $cdir"
+log "campaign $name on $host: $total runs (timeout per run ${RUN_TIMEOUT} s) -> $cdir"
 
 n=0
 for ((rep = 0; rep < REPS; rep++)); do

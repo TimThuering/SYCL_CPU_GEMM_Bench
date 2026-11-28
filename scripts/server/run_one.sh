@@ -23,6 +23,7 @@ trap 'rm -rf "$cache"' EXIT
 (
   flow_load "$flow"
   flow_run_env "$flow" "$threads" "$cache"
-  exec timeout "${GB_RUN_TIMEOUT:-3600}" taskset -c "$(gb_cpu_list "$threads")" \
+  # SIGTERM at the timeout, SIGKILL 60 s later if the process does not end
+  exec timeout --kill-after=60 "${GB_RUN_TIMEOUT:-3600}" taskset -c "$(gb_cpu_list "$threads")" \
        "$bin" "$@" --label "$flow" -q -o "$out"
 )
